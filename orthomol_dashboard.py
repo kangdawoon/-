@@ -569,8 +569,9 @@ with tab1:
     if gift_tone_df is not None:
         PRIMARY_AXIS = ["오쏘몰", "선물 추천", "건강 선물", "효도 선물", "비타민 선물", "명절 선물세트"]
         SECONDARY_AXIS = ["부담없는 선물", "고급 선물", "센스있는 선물", "가성비 선물", "감동 선물"]
-        primary_colors = {"오쏘몰": GOLD, "선물 추천": STEEL, "건강 선물": SAGE, "효도 선물": RUST, "비타민 선물": PLUM, "명절 선물세트": INK}
-        secondary_colors = {"부담없는 선물": STEEL, "고급 선물": SAGE, "센스있는 선물": RUST, "가성비 선물": PLUM, "감동 선물": INK}
+        TONE_DOWN = "#D5D7DC"
+        PRIMARY_EMPHASIS = {"비타민 선물", "건강 선물"}
+        SECONDARY_EMPHASIS = {"센스있는 선물"}
 
         col_t1, col_t2 = st.columns(2)
         with col_t1:
@@ -580,8 +581,9 @@ with tab1:
                 gd = gift_tone_df[gift_tone_df["키워드그룹"] == kw].sort_values("기간")
                 if gd.empty:
                     continue
+                emphasized = kw in PRIMARY_EMPHASIS
                 f_primary.add_trace(go.Scatter(x=gd["기간"], y=gd["검색관심도(상대값)"], name=kw,
-                                                line=dict(color=primary_colors.get(kw), width=3.5 if kw == "오쏘몰" else 1.8)))
+                                                line=dict(color=SAGE if emphasized else TONE_DOWN, width=3.5 if emphasized else 1.2)))
             st.plotly_chart(base_layout(f_primary, height=340), use_container_width=True)
             chart_card_close()
 
@@ -592,8 +594,9 @@ with tab1:
                 gd = gift_tone_df[gift_tone_df["키워드그룹"] == kw].sort_values("기간")
                 if gd.empty:
                     continue
+                emphasized = kw in SECONDARY_EMPHASIS
                 f_secondary.add_trace(go.Scatter(x=gd["기간"], y=gd["검색관심도(상대값)"], name=kw,
-                                                  line=dict(color=secondary_colors.get(kw), width=1.8)))
+                                                  line=dict(color=SAGE if emphasized else TONE_DOWN, width=3.5 if emphasized else 1.2)))
             st.plotly_chart(base_layout(f_secondary, height=340), use_container_width=True)
             chart_card_close()
 
@@ -605,7 +608,8 @@ with tab1:
                 "— 전체 검색 생태계에서 비중이 작은 표현이라는 뜻입니다. 반면 &ldquo;고급 선물&rdquo;·&ldquo;센스있는 선물&rdquo;처럼 "
                 "<b>격식 있는 톤</b>과, &ldquo;효도 선물&rdquo;·&ldquo;건강 선물&rdquo;·&ldquo;비타민 선물&rdquo;처럼 <b>목적이 뚜렷한 키워드</b>가 "
                 "상대적으로 더 많이 검색됩니다. 오쏘몰이 위치할 자리는 &ldquo;가성비&rdquo;보다 <b>&ldquo;격식·목적성&rdquo; 계열 키워드와 더 맞닿아 있다</b>는 "
-                "해석이 가능합니다.")
+                "해석이 가능합니다. &ldquo;비타민 선물&rdquo;·&ldquo;건강 선물&rdquo;·&ldquo;센스있는 선물&rdquo;(강조 표시)은 오쏘몰·명절선물세트처럼 "
+                "특정 시즌에 급등락하는 다른 키워드들과 달리, <b>1년 내내 상대적으로 평탄한 흐름을 유지</b>합니다.")
     else:
         missing_note("naver_gift_tone_trend.csv")
 
