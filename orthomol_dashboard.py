@@ -289,6 +289,7 @@ google_df = safe_csv("google_trend_kr.csv")
 youtube_df = safe_csv("youtube_content.csv")
 news_keyword_df = safe_excel("오쏘몰_키워드.xlsx")
 related_words_df = safe_excel("연관어분석_20260828.xlsx")
+gift_tone_df = safe_csv("naver_gift_tone_trend.csv")
 
 if brand_df is not None:
     brand_df["기간"] = pd.to_datetime(brand_df["기간"])
@@ -301,6 +302,8 @@ if intent_df is not None:
     intent_df["기간"] = pd.to_datetime(intent_df["기간"])
 if google_df is not None:
     google_df["기간"] = pd.to_datetime(google_df["기간"])
+if gift_tone_df is not None:
+    gift_tone_df["기간"] = pd.to_datetime(gift_tone_df["기간"])
 
 AGE_ORDER = ["0~12세", "13~18세", "19~24세", "25~29세", "30~34세",
              "35~39세", "40~44세", "45~49세", "50~54세", "55~60세", "60세 이상"]
@@ -559,6 +562,45 @@ with tab1:
                 f"<b>&ldquo;명절&rdquo; 프레임에는 강하지만 &ldquo;연말·직장인 선물&rdquo; 등 평상시 프레임의 수요는 놓치고 있을 가능성</b>이 있습니다.")
     else:
         missing_note("naver_seasonality_trend.csv")
+
+    st.markdown('<div class="section-title">선물 톤·격식 키워드 비교</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-desc">캐주얼한 톤 vs 격식·목적성 있는 톤 — 어떤 표현이 실제로 더 검색되는지</div>', unsafe_allow_html=True)
+
+    if gift_tone_df is not None:
+        PRIMARY_AXIS = ["오쏘몰", "선물 추천", "건강 선물", "효도 선물", "비타민 선물", "명절 선물세트"]
+        SECONDARY_AXIS = ["부담없는 선물", "고급 선물", "센스있는 선물", "가성비 선물", "감동 선물"]
+        primary_colors = {"오쏘몰": GOLD, "선물 추천": STEEL, "건강 선물": SAGE, "효도 선물": RUST, "비타민 선물": PLUM, "명절 선물세트": INK}
+        secondary_colors = {"부담없는 선물": STEEL, "고급 선물": SAGE, "센스있는 선물": RUST, "가성비 선물": PLUM, "감동 선물": INK}
+
+        chart_card_open("선물 톤·격식 키워드별 검색 관심도 추이", "실선=주축(격식·목적성) · 점선=보조축(캐주얼 톤)")
+        f_tone = make_subplots(specs=[[{"secondary_y": True}]])
+        for kw in PRIMARY_AXIS:
+            gd = gift_tone_df[gift_tone_df["키워드그룹"] == kw].sort_values("기간")
+            if gd.empty:
+                continue
+            f_tone.add_trace(go.Scatter(x=gd["기간"], y=gd["검색관심도(상대값)"], name=kw,
+                                         line=dict(color=primary_colors.get(kw), width=3 if kw == "오쏘몰" else 1.8)),
+                              secondary_y=False)
+        for kw in SECONDARY_AXIS:
+            gd = gift_tone_df[gift_tone_df["키워드그룹"] == kw].sort_values("기간")
+            if gd.empty:
+                continue
+            f_tone.add_trace(go.Scatter(x=gd["기간"], y=gd["검색관심도(상대값)"], name=kw,
+                                         line=dict(color=secondary_colors.get(kw), width=1.6, dash="dot")),
+                              secondary_y=True)
+        st.plotly_chart(base_layout(f_tone, height=360), use_container_width=True)
+        st.markdown(f'<div style="font-size:11.5px; color:{TEXT_SUB}; margin-top:-4px;">'
+                    f'※ 서로 다른 시점에 수집되어 그룹 간 절대 크기 비교는 어려우며, 각 키워드의 시간에 따른 상대적 흐름'
+                    f'(언제 오르고 내리는지)만 비교하는 용도입니다</div>', unsafe_allow_html=True)
+        chart_card_close()
+
+        insight("&ldquo;부담없는 선물&rdquo;·&ldquo;가성비 선물&rdquo;·&ldquo;감동 선물&rdquo;처럼 <b>캐주얼한 톤의 키워드는 검색량 자체가 매우 낮습니다</b> "
+                "— 전체 검색 생태계에서 비중이 작은 표현이라는 뜻입니다. 반면 &ldquo;고급 선물&rdquo;·&ldquo;센스있는 선물&rdquo;처럼 "
+                "<b>격식 있는 톤</b>과, &ldquo;효도 선물&rdquo;·&ldquo;건강 선물&rdquo;·&ldquo;비타민 선물&rdquo;처럼 <b>목적이 뚜렷한 키워드</b>가 "
+                "상대적으로 더 많이 검색됩니다. 오쏘몰이 위치할 자리는 &ldquo;가성비&rdquo;보다 <b>&ldquo;격식·목적성&rdquo; 계열 키워드와 더 맞닿아 있다</b>는 "
+                "해석이 가능합니다.")
+    else:
+        missing_note("naver_gift_tone_trend.csv")
 
     st.markdown('<div class="section-title">참고 — 연령·성별로 본 선물 니즈의 배경</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-desc">선물 니즈 자체는 전 연령대에 고르게 나타남 — 아래는 배경 참고 데이터</div>', unsafe_allow_html=True)
