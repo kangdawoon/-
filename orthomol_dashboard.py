@@ -572,27 +572,34 @@ with tab1:
         primary_colors = {"오쏘몰": GOLD, "선물 추천": STEEL, "건강 선물": SAGE, "효도 선물": RUST, "비타민 선물": PLUM, "명절 선물세트": INK}
         secondary_colors = {"부담없는 선물": STEEL, "고급 선물": SAGE, "센스있는 선물": RUST, "가성비 선물": PLUM, "감동 선물": INK}
 
-        chart_card_open("선물 톤·격식 키워드별 검색 관심도 추이", "실선=주축(격식·목적성) · 점선=보조축(캐주얼 톤)")
-        f_tone = make_subplots(specs=[[{"secondary_y": True}]])
-        for kw in PRIMARY_AXIS:
-            gd = gift_tone_df[gift_tone_df["키워드그룹"] == kw].sort_values("기간")
-            if gd.empty:
-                continue
-            f_tone.add_trace(go.Scatter(x=gd["기간"], y=gd["검색관심도(상대값)"], name=kw,
-                                         line=dict(color=primary_colors.get(kw), width=3 if kw == "오쏘몰" else 1.8)),
-                              secondary_y=False)
-        for kw in SECONDARY_AXIS:
-            gd = gift_tone_df[gift_tone_df["키워드그룹"] == kw].sort_values("기간")
-            if gd.empty:
-                continue
-            f_tone.add_trace(go.Scatter(x=gd["기간"], y=gd["검색관심도(상대값)"], name=kw,
-                                         line=dict(color=secondary_colors.get(kw), width=1.6, dash="dot")),
-                              secondary_y=True)
-        st.plotly_chart(base_layout(f_tone, height=360), use_container_width=True)
-        st.markdown(f'<div style="font-size:11.5px; color:{TEXT_SUB}; margin-top:-4px;">'
-                    f'※ 서로 다른 시점에 수집되어 그룹 간 절대 크기 비교는 어려우며, 각 키워드의 시간에 따른 상대적 흐름'
-                    f'(언제 오르고 내리는지)만 비교하는 용도입니다</div>', unsafe_allow_html=True)
-        chart_card_close()
+        col_t1, col_t2 = st.columns(2)
+        with col_t1:
+            chart_card_open("주축 — 격식·목적성 키워드", "오쏘몰·선물 추천·건강/효도/비타민 선물·명절 선물세트")
+            f_primary = go.Figure()
+            for kw in PRIMARY_AXIS:
+                gd = gift_tone_df[gift_tone_df["키워드그룹"] == kw].sort_values("기간")
+                if gd.empty:
+                    continue
+                f_primary.add_trace(go.Scatter(x=gd["기간"], y=gd["검색관심도(상대값)"], name=kw,
+                                                line=dict(color=primary_colors.get(kw), width=3.5 if kw == "오쏘몰" else 1.8)))
+            st.plotly_chart(base_layout(f_primary, height=340), use_container_width=True)
+            chart_card_close()
+
+        with col_t2:
+            chart_card_open("보조축 — 캐주얼 톤 키워드", "부담없는·고급·센스있는·가성비·감동 선물")
+            f_secondary = go.Figure()
+            for kw in SECONDARY_AXIS:
+                gd = gift_tone_df[gift_tone_df["키워드그룹"] == kw].sort_values("기간")
+                if gd.empty:
+                    continue
+                f_secondary.add_trace(go.Scatter(x=gd["기간"], y=gd["검색관심도(상대값)"], name=kw,
+                                                  line=dict(color=secondary_colors.get(kw), width=1.8)))
+            st.plotly_chart(base_layout(f_secondary, height=340), use_container_width=True)
+            chart_card_close()
+
+        st.markdown(f'<div style="font-size:11.5px; color:{TEXT_SUB}; margin-top:-8px; margin-bottom:16px;">'
+                    f'※ 두 차트는 서로 다른 시점에 수집되어 그룹 간 절대 크기 비교는 어려우며, 각 키워드의 시간에 따른 상대적 흐름'
+                    f'(언제 오르고 내리는지)만 비교하는 용도입니다 — y축 스케일 차이(왼쪽 0~100대 · 오른쪽 0~4대)에 유의해주세요.</div>', unsafe_allow_html=True)
 
         insight("&ldquo;부담없는 선물&rdquo;·&ldquo;가성비 선물&rdquo;·&ldquo;감동 선물&rdquo;처럼 <b>캐주얼한 톤의 키워드는 검색량 자체가 매우 낮습니다</b> "
                 "— 전체 검색 생태계에서 비중이 작은 표현이라는 뜻입니다. 반면 &ldquo;고급 선물&rdquo;·&ldquo;센스있는 선물&rdquo;처럼 "
