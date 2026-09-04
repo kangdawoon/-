@@ -111,7 +111,9 @@ html, body, [class*="css"] {{
     color: {TEXT_SUB};
     margin-bottom: 10px;
     line-height: 1.4;
-    height: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: flex-end;
 }}
 .kpi-value {{
     font-family: 'JetBrains Mono', monospace;
@@ -121,13 +123,14 @@ html, body, [class*="css"] {{
     letter-spacing: -0.02em;
 }}
 .kpi-delta {{
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Inter', sans-serif;
     font-size: 12px;
     font-weight: 600;
     margin-top: 6px;
     display: inline-block;
-    padding: 3px 8px;
-    border-radius: 20px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    line-height: 1.5;
 }}
 .delta-down {{ color: {RUST}; background: rgba(229,72,77,0.08); }}
 .delta-up {{ color: {SAGE}; background: rgba(48,164,108,0.08); }}
@@ -328,7 +331,7 @@ if google_df is not None:
 
 if season_pivot is not None and "명절 선물" in season_pivot.columns and "오쏘몰" in season_pivot.columns:
     match = season_pivot["명절 선물"].idxmax() == season_pivot["오쏘몰"].idxmax()
-    kpi_cards_html += kpi_html("명절 시즌 상관관계", "일치" if match else "불일치", "명절선물 피크 주 = 오쏘몰 피크 주" if match else "시기 어긋남", "up" if match else "flat")
+    kpi_cards_html += kpi_html("명절 시즌 상관관계", "일치" if match else "불일치", "명절선물 피크 주 일치" if match else "시기 어긋남", "up" if match else "flat")
 
 if youtube_df is not None:
     med = youtube_df.groupby("브랜드")["조회수"].median()
@@ -338,6 +341,28 @@ if youtube_df is not None:
 
 if kpi_cards_html:
     st.markdown(f'<div class="kpi-strip">{kpi_cards_html}</div>', unsafe_allow_html=True)
+
+# ============================================================
+# 기간 필터 — 검색 추이 차트 전용 (탭1 상단 차트 · 탭4 교차검증에만 적용, KPI 스트립은 항상 전체 기간)
+# ============================================================
+date_range = None
+if brand_df is not None:
+    min_d, max_d = brand_df["기간"].min().date(), brand_df["기간"].max().date()
+    if min_d < max_d:
+        fcol1, fcol2 = st.columns([1, 4])
+        with fcol1:
+            st.markdown(f'<div style="padding-top:10px; font-size:13px; font-weight:600; color:{TEXT_MAIN};">기간 필터</div>', unsafe_allow_html=True)
+        with fcol2:
+            date_range = st.slider("검색 추이 차트 기간", min_value=min_d, max_value=max_d, value=(min_d, max_d),
+                                    format="YYYY-MM", label_visibility="collapsed")
+        st.markdown('<div class="section-desc" style="margin-top:-4px;">브랜드별 검색 관심도 추이(탭1)·네이버 vs 구글 교차검증(탭4) 차트에만 적용됩니다.</div>', unsafe_allow_html=True)
+
+
+def apply_date_range(df, col="기간"):
+    if date_range is None or df is None:
+        return df
+    return df[(df[col].dt.date >= date_range[0]) & (df[col].dt.date <= date_range[1])]
+
 
 # ============================================================
 # 탭 구성
@@ -423,21 +448,26 @@ with tab1:
     st.markdown('<div class="section-desc">네이버 데이터랩 · 12개월 · 최고치=100 상대 지수</div>', unsafe_allow_html=True)
 
     if brand_df is not None:
+        brand_df_f = apply_date_range(brand_df)
         chart_card_open("월간 검색 관심도")
         fig = go.Figure()
-        for b in brand_df["브랜드"].unique():
-            d = brand_df[brand_df["브랜드"] == b].sort_values("기간")
+        for b in brand_df_f["브랜드"].unique():
+            d = brand_df_f[brand_df_f["브랜드"] == b].sort_values("기간")
             fig.add_trace(go.Scatter(x=d["기간"], y=d["검색관심도(상대값)"], name=b,
                                       line=dict(width=4 if b == "오쏘몰" else 1.8, color=BRAND_COLORS.get(b)),
                                       mode="lines+markers", marker=dict(size=4)))
         st.plotly_chart(base_layout(fig), use_container_width=True)
         chart_card_close()
 
-        first_val = brand_df[brand_df["브랜드"] == "오쏘몰"].sort_values("기간")["검색관심도(상대값)"].iloc[0]
-        last_val = brand_df[brand_df["브랜드"] == "오쏘몰"].sort_values("기간")["검색관심도(상대값)"].iloc[-1]
-        insight(f"오쏘몰은 12개월간 <b>{(last_val-first_val)/first_val*100:.1f}%</b> 하락({first_val:.0f}→{last_val:.0f})한 반면, "
-                f"고려은단은 동기간 상승 흐름을 유지했습니다. 판매량 1위(별도 브랜드 리포트 기준)와 검색 관심도 하락이 동시에 나타나는 점은 "
-                f"신규 유입보다 기존 고객 재구매 위주 매출 구조일 가능성을 시사합니다.")
+        o_f = brand_df_f[brand_df_f["브랜드"] == "오쏘몰"].sort_values("기간")["검색관심도(상대값)"]
+        if len(o_f) >= 2:
+            first_val, last_val = o_f.iloc[0], o_f.iloc[-1]
+            insight(f"오쏘몰은 선택 기간 동안 <b>{(last_val-first_val)/first_val*100:.1f}%</b> {'하락' if last_val < first_val else '상승'}"
+                    f"({first_val:.0f}→{last_val:.0f})한 반면, "
+                    f"고려은단은 동기간 상승 흐름을 유지했습니다. 판매량 1위(별도 브랜드 리포트 기준)와 검색 관심도 하락이 동시에 나타나는 점은 "
+                    f"신규 유입보다 기존 고객 재구매 위주 매출 구조일 가능성을 시사합니다.")
+        else:
+            st.info("선택한 기간에 데이터가 부족합니다 — 기간을 넓혀주세요.")
     else:
         missing_note("naver_search_trend.csv")
 
@@ -569,11 +599,48 @@ with tab1:
             missing_note("naver_purchase_intent.csv")
 
     if demo_df is not None or intent_df is not None:
-        insight("오쏘몰 브랜드명 검색 자체는 남성이 여성보다 전반적으로 높고 안정적이며, <b>35~39세(페르소나 구간)는 남성 중 4위</b>로 "
-                "50~60대 남성과 큰 차이가 없습니다 — 즉 <b>선물 니즈는 특정 연령대에 국한되지 않고 전 연령대에 걸쳐 있다는 것</b>이 배경입니다. "
-                "5~8년차 직장인이 타겟으로 유효한 이유는 검색량 크기가 아니라, 위에서 확인한 <b>&ldquo;5가지 상황을 동시에 마주하는 빈도&rdquo;</b>에 있습니다. "
-                "구매의도 측면에서는 <b>&ldquo;오쏘몰 후기&rdquo; 검색이 +45.8% 증가</b>한 반면 <b>&ldquo;오쏘몰 가격&rdquo;은 -70.6% 감소</b> — "
-                "브랜드 인지는 줄어도 이미 관심 있는 고객의 구매 직전 행동은 유지되고 있을 가능성을 보여줍니다.")
+        insight_parts = []
+
+        if demo_df is not None:
+            od = demo_df[demo_df["브랜드"] == "오쏘몰"].copy()
+            male = od[od["성별"] == "남성"]
+            female = od[od["성별"] == "여성"]
+            rank_txt = ""
+            if not male.empty and "35~39세" in male["연령대"].values:
+                male_sorted = male.sort_values("평균검색관심도", ascending=False).reset_index(drop=True)
+                rank_3539 = int(male_sorted.index[male_sorted["연령대"] == "35~39세"][0]) + 1
+                higher = male_sorted.loc[: rank_3539 - 2, "연령대"].tolist()
+                if higher:
+                    rank_txt = (f"<b>35~39세(페르소나 구간)는 남성 중 {rank_3539}위</b>로 {'·'.join(higher)} 남성과 큰 차이가 없습니다 — "
+                                f"즉 <b>선물 니즈는 특정 연령대에 국한되지 않고 전 연령대에 걸쳐 있다는 것</b>이 배경입니다. ")
+            if not male.empty and not female.empty:
+                insight_parts.append(f"오쏘몰 브랜드명 검색 자체는 남성 평균({male['평균검색관심도'].mean():.1f})이 여성({female['평균검색관심도'].mean():.1f})보다 높으며, {rank_txt}")
+
+        insight_parts.append("5~8년차 직장인이 타겟으로 유효한 이유는 검색량 크기가 아니라, 위에서 확인한 <b>&ldquo;5가지 상황을 동시에 마주하는 빈도&rdquo;</b>에 있습니다.")
+
+        if intent_df is not None:
+            def trend_pct(group):
+                d = intent_df[intent_df["키워드그룹"] == group].sort_values("기간")
+                if len(d) < 6:
+                    return None
+                fv = d["검색관심도(상대값)"].iloc[:3].mean()
+                lv = d["검색관심도(상대값)"].iloc[-3:].mean()
+                return (lv - fv) / fv * 100 if fv else None
+
+            review_pct = trend_pct("오쏘몰 후기")
+            price_pct = trend_pct("오쏘몰 가격")
+            if review_pct is not None and price_pct is not None:
+                both_down = review_pct < 0 and price_pct < 0
+                tail = ("브랜드 검색 관심도 하락과 함께 구매 직전 단계 키워드(후기·가격) 검색도 동반 감소해, "
+                        "구매를 고려하는 잠재 고객 규모 자체가 줄고 있을 가능성을 시사합니다."
+                        if both_down else
+                        "브랜드 검색 관심도와 구매 직전 단계 키워드의 방향이 엇갈려, 추가 확인이 필요합니다.")
+                insight_parts.append(
+                    f"구매의도 측면에서는 <b>&ldquo;오쏘몰 후기&rdquo; 검색이 초기 3개월 대비 최근 3개월 평균 {review_pct:+.1f}%</b>, "
+                    f"<b>&ldquo;오쏘몰 가격&rdquo;은 {price_pct:+.1f}%</b>로 나타났습니다 — {tail}"
+                )
+
+        insight(" ".join(insight_parts))
 
 # ------------------------------------------------------------
 # TAB 2. 콘텐츠 & 도달
@@ -609,8 +676,19 @@ with tab2:
                 st.plotly_chart(base_layout(f8, height=320, legend=False), use_container_width=True)
                 chart_card_close()
 
-        insight("오쏘몰은 <b>블로그·카페 총 언급량 1위</b>지만, 검색 관심도(수요)는 하락 추세입니다 — 콘텐츠 공급과 실제 수요가 엇갈리는 지점입니다. "
-                "제목 키워드 분석 결과 <b>&ldquo;선물&rdquo; 프레이밍 비율도 4개 브랜드 중 오쏘몰이 1위(10.5%)</b>로, 프리미엄 선물 포지셔닝이 콘텐츠 레벨에서도 확인됩니다.")
+        bc = content_summary_df[content_summary_df["채널"].isin(["블로그", "카페글"])].groupby("브랜드")["총_언급건수"].sum().sort_values(ascending=False)
+        top_brand = bc.index[0] if not bc.empty else None
+
+        gift_txt = ""
+        if content_posts_df is not None and top_brand is not None:
+            gift_ratio = content_posts_df.groupby("브랜드")["제목"].apply(lambda s: s.str.contains("선물", na=False).mean() * 100)
+            if top_brand in gift_ratio.index and gift_ratio.notna().any():
+                gift_rank = int(gift_ratio.rank(ascending=False)[top_brand])
+                gift_txt = (f" 제목 키워드 분석 결과 <b>&ldquo;선물&rdquo; 프레이밍 비율도 4개 브랜드 중 {top_brand}이 {gift_rank}위"
+                            f"({gift_ratio[top_brand]:.1f}%)</b>로, 프리미엄 선물 포지셔닝이 콘텐츠 레벨에서도 확인됩니다.")
+
+        if top_brand is not None:
+            insight(f"{top_brand}은 <b>블로그·카페 총 언급량 1위</b>지만, 검색 관심도(수요)는 하락 추세입니다 — 콘텐츠 공급과 실제 수요가 엇갈리는 지점입니다.{gift_txt}")
     else:
         missing_note("naver_content_summary.csv", "naver_content_recent_posts.csv")
 
@@ -620,12 +698,13 @@ with tab2:
     col3, col4 = st.columns(2)
     with col3:
         if news_keyword_df is not None:
-            chart_card_open("월별 뉴스 언급 건수", "11월은 노이즈 검증 필요 구간(하단 인사이트 참고)")
             nd = news_keyword_df.copy()
             nd["기간"] = pd.to_datetime(nd["date"].astype(str), format="%Y%m")
             nd = nd.sort_values("기간")
             nd["label"] = nd["기간"].dt.strftime("%Y-%m")
-            colors = [RUST if lb == "2025-11" else INK for lb in nd["label"]]
+            peak_label = nd.loc[nd["오쏘몰"].idxmax(), "label"]
+            chart_card_open("월별 뉴스 언급 건수", f"{peak_label}은 노이즈 검증 필요 구간(하단 인사이트 참고)")
+            colors = [RUST if lb == peak_label else INK for lb in nd["label"]]
             f9 = go.Figure(go.Bar(x=nd["label"], y=nd["오쏘몰"], marker_color=colors))
             st.plotly_chart(base_layout(f9, height=300, legend=False), use_container_width=True)
             chart_card_close()
@@ -643,9 +722,14 @@ with tab2:
             missing_note("연관어분석_20260828.xlsx")
 
     if news_keyword_df is not None or related_words_df is not None:
-        insight("3월(3년 연속 1위 발표)·4월(ODP 신제품 출시)처럼 <b>기업 발표 시점에 언급이 집중</b>되는 패턴이 뚜렷합니다. "
-                "연관어 상위에 &ldquo;동아제약&rdquo;·&ldquo;Orthomol&rdquo;·&ldquo;멀티비타민&rdquo;·&ldquo;구강용&rdquo; 등이 나와 브랜드 포지셔닝(프리미엄·이중제형)과 일치합니다. "
-                "⚠️ <b>11월 스파이크는 상당수가 무관한 기사(경품 이벤트 등 스치는 언급)로 노이즈가 섞여있어 해석에 주의</b>가 필요합니다.")
+        insight_parts = ["3월(3년 연속 1위 발표)·4월(ODP 신제품 출시)처럼 <b>기업 발표 시점에 언급이 집중</b>되는 패턴이 뚜렷합니다."]
+        if related_words_df is not None:
+            top_words = related_words_df.sort_values("가중치", ascending=False).head(4)["키워드"].tolist()
+            words_txt = "·".join(f"&ldquo;{w}&rdquo;" for w in top_words)
+            insight_parts.append(f"연관어 상위에 {words_txt} 등이 나와 브랜드 포지셔닝(프리미엄·이중제형)과 일치합니다.")
+        if news_keyword_df is not None:
+            insight_parts.append(f"⚠️ <b>{peak_label} 스파이크는 상당수가 무관한 기사(경품 이벤트 등 스치는 언급)로 노이즈가 섞여있어 해석에 주의</b>가 필요합니다.")
+        insight(" ".join(insight_parts))
 
     st.markdown('<div class="section-title">유튜브 콘텐츠</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-desc">영상 조회수 · 인게이지먼트 비교</div>', unsafe_allow_html=True)
@@ -673,9 +757,12 @@ with tab2:
             chart_card_close()
 
         vs_idx = vs.set_index("브랜드")
-        if "고려은단" in vs_idx.index and "오쏘몰" in vs_idx.index and vs_idx.loc["오쏘몰", "median"] > 0:
-            ratio = vs_idx.loc["고려은단", "median"] / vs_idx.loc["오쏘몰", "median"]
-            insight(f"오쏘몰은 4개 브랜드 중 <b>평균·중앙값 조회수 모두 최하위</b>(중앙값 기준 고려은단 대비 약 <b>{ratio:.0f}배</b> 낮음)입니다. "
+        if "오쏘몰" in vs_idx.index and vs_idx.loc["오쏘몰", "median"] > 0 and len(vs_idx) > 1:
+            top_brand = vs_idx["median"].idxmax()
+            is_lowest = vs_idx["median"].idxmin() == "오쏘몰" and vs_idx["mean"].idxmin() == "오쏘몰"
+            rank_txt = "최하위" if is_lowest else f"{int(vs_idx['median'].rank(ascending=False)['오쏘몰'])}위"
+            ratio = vs_idx.loc[top_brand, "median"] / vs_idx.loc["오쏘몰", "median"]
+            insight(f"오쏘몰은 {len(vs_idx)}개 브랜드 중 <b>중앙값 조회수 기준 {rank_txt}</b>({top_brand} 대비 약 <b>{ratio:.0f}배</b> 낮음)입니다. "
                     f"상위 영상 중 상당수가 자동생성형 &ldquo;랭킹&rdquo; 채널의 저품질 콘텐츠이며, 진짜 브랜드 콘텐츠는 공식 채널(동아쏘시오그룹) 소수에 그칩니다. "
                     f"텍스트 콘텐츠(블로그)는 강세였지만 <b>영상 콘텐츠는 뚜렷한 약점 영역</b>입니다.")
     else:
@@ -715,8 +802,10 @@ with tab4:
     st.markdown('<div class="section-desc">서로 다른 검색엔진에서도 같은 추세가 확인되는지</div>', unsafe_allow_html=True)
 
     if brand_df is not None and google_df is not None:
-        o_naver = brand_df[brand_df["브랜드"] == "오쏘몰"].sort_values("기간")
-        o_google = google_df[google_df["브랜드"] == "오쏘몰"].sort_values("기간")
+        o_naver = apply_date_range(brand_df)
+        o_naver = o_naver[o_naver["브랜드"] == "오쏘몰"].sort_values("기간")
+        o_google = apply_date_range(google_df)
+        o_google = o_google[o_google["브랜드"] == "오쏘몰"].sort_values("기간")
 
         chart_card_open("오쏘몰 검색 관심도: 네이버(월간) vs 구글(주간)")
         f14 = go.Figure()
@@ -727,21 +816,29 @@ with tab4:
         st.plotly_chart(base_layout(f14, height=380), use_container_width=True)
         chart_card_close()
 
-        nv = o_naver["검색관심도(상대값)"]
-        n_pct = (nv.iloc[-1] - nv.iloc[0]) / nv.iloc[0] * 100
-        gv = o_google["검색관심도(상대값)"]
-        g_pct = (gv.iloc[-4:].mean() - gv.iloc[:4].mean()) / gv.iloc[:4].mean() * 100
+        if len(o_naver) >= 2 and len(o_google) >= 2:
+            nv = o_naver["검색관심도(상대값)"]
+            n_pct = (nv.iloc[-1] - nv.iloc[0]) / nv.iloc[0] * 100
+            gv = o_google["검색관심도(상대값)"]
+            g_head = gv.iloc[: min(4, len(gv))].mean()
+            g_tail = gv.iloc[-min(4, len(gv)):].mean()
+            g_pct = (g_tail - g_head) / g_head * 100
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(kpi_html("네이버 (첫달 대비 마지막달)", f"{nv.iloc[-1]:.1f}", f"{n_pct:+.1f}%", "down" if n_pct < 0 else "up"), unsafe_allow_html=True)
-        with col2:
-            st.markdown(kpi_html("구글 (초반4주 대비 최근4주)", f"{gv.iloc[-4:].mean():.1f}", f"{g_pct:+.1f}%", "down" if g_pct < 0 else "up"), unsafe_allow_html=True)
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(kpi_html("네이버 (첫달 대비 마지막달)", f"{nv.iloc[-1]:.1f}", f"{n_pct:+.1f}%", "down" if n_pct < 0 else "up"), unsafe_allow_html=True)
+            with col2:
+                st.markdown(kpi_html("구글 (초반 대비 최근 평균)", f"{g_tail:.1f}", f"{g_pct:+.1f}%", "down" if g_pct < 0 else "up"), unsafe_allow_html=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        insight(f"네이버({n_pct:+.1f}%)와 구글({g_pct:+.1f}%) <b>두 검색엔진에서 방향성이 일치</b> — 오쏘몰 검색 관심도 하락이 "
-                f"특정 플랫폼의 우연이 아니라 <b>실제 시장 추세</b>임을 교차 검증합니다. "
-                f"집계 주기(월간 vs 주간)가 달라 계산 방식은 다르지만, 하락이라는 방향성 자체는 두 플랫폼에서 동일하게 관찰됩니다.")
+            st.markdown("<br>", unsafe_allow_html=True)
+            same_dir = (n_pct < 0) == (g_pct < 0)
+            insight(f"네이버({n_pct:+.1f}%)와 구글({g_pct:+.1f}%) "
+                    + (f"<b>두 검색엔진에서 방향성이 일치</b> — 오쏘몰 검색 관심도 변화가 특정 플랫폼의 우연이 아니라 <b>실제 시장 추세</b>임을 교차 검증합니다."
+                       if same_dir else
+                       f"<b>두 검색엔진에서 방향성이 엇갈립니다</b> — 선택한 기간에서는 플랫폼 간 차이가 있어 추가 확인이 필요합니다.")
+                    + " 집계 주기(월간 vs 주간)가 달라 계산 방식은 다르지만, 같은 기간을 비교했습니다.")
+        else:
+            st.info("선택한 기간에 데이터가 부족합니다 — 기간을 넓혀주세요.")
     else:
         missing_note("naver_search_trend.csv", "google_trend_kr.csv")
 
