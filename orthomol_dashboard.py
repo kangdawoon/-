@@ -623,11 +623,27 @@ with tab1:
             od = demo_df[demo_df["브랜드"] == "오쏘몰"].copy()
             od["연령대"] = pd.Categorical(od["연령대"], categories=AGE_ORDER, ordered=True)
             od = od.sort_values("연령대")
+
+            HIGHLIGHT_AGES = {"30~34세", "35~39세"}
             f5 = go.Figure()
             for gender, c in [("남성", GOLD), ("여성", PLUM)]:
                 gd = od[od["성별"] == gender]
-                colors = [RUST if (gender == "남성" and age == "35~39세") else c for age in gd["연령대"]]
-                f5.add_trace(go.Bar(x=gd["연령대"], y=gd["평균검색관심도"], name=gender, marker_color=colors if gender == "남성" else c))
+                colors = [RUST if age in HIGHLIGHT_AGES else c for age in gd["연령대"]]
+                f5.add_trace(go.Bar(x=gd["연령대"], y=gd["평균검색관심도"], name=gender, marker_color=colors))
+
+            overall_row = od.loc[od["평균검색관심도"].idxmax()]
+            highlight_df = od[od["연령대"].isin(HIGHLIGHT_AGES)]
+            thirties_row = highlight_df.loc[highlight_df["평균검색관심도"].idxmax()]
+            gap = thirties_row["평균검색관심도"] - overall_row["평균검색관심도"]
+            male_shift = -20  # 남성 막대는 그룹 내 왼쪽에 위치
+
+            f5.add_annotation(x=overall_row["연령대"], y=overall_row["평균검색관심도"], text="최고 구간",
+                               showarrow=False, yshift=16, xshift=male_shift if overall_row["성별"] == "남성" else 20,
+                               font=dict(size=10, color=TEXT_SUB))
+            f5.add_annotation(x=thirties_row["연령대"], y=thirties_row["평균검색관심도"], text=f"{gap:+.1f}p",
+                               showarrow=False, yshift=16, xshift=male_shift if thirties_row["성별"] == "남성" else 20,
+                               font=dict(size=10, color=RUST, family="'JetBrains Mono', monospace"))
+
             st.plotly_chart(base_layout(f5, height=320), use_container_width=True)
             chart_card_close()
         else:
