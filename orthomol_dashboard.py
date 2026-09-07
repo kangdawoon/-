@@ -610,6 +610,47 @@ with tab1:
                 "상대적으로 더 많이 검색됩니다. 오쏘몰이 위치할 자리는 &ldquo;가성비&rdquo;보다 <b>&ldquo;격식·목적성&rdquo; 계열 키워드와 더 맞닿아 있다</b>는 "
                 "해석이 가능합니다. &ldquo;비타민 선물&rdquo;·&ldquo;건강 선물&rdquo;·&ldquo;센스있는 선물&rdquo;(강조 표시)은 오쏘몰·명절선물세트처럼 "
                 "특정 시즌에 급등락하는 다른 키워드들과 달리, <b>1년 내내 상대적으로 평탄한 흐름을 유지</b>합니다.")
+
+        HOLIDAY_WINDOWS = [
+            (pd.Timestamp("2025-09-08"), pd.Timestamp("2025-10-06")),
+            (pd.Timestamp("2026-01-26"), pd.Timestamp("2026-02-23")),
+        ]
+        RATIO_KEYWORDS = ["오쏘몰", "명절 선물세트", "건강 선물", "비타민 선물", "센스있는 선물", "선물 추천"]
+
+        def holiday_ratio(keyword):
+            d = gift_tone_df[gift_tone_df["키워드그룹"] == keyword]
+            if d.empty:
+                return None
+            is_holiday = pd.Series(False, index=d.index)
+            for start, end in HOLIDAY_WINDOWS:
+                is_holiday |= (d["기간"] >= start) & (d["기간"] <= end)
+            hol_avg = d.loc[is_holiday, "검색관심도(상대값)"].mean()
+            normal_avg = d.loc[~is_holiday, "검색관심도(상대값)"].mean()
+            return hol_avg / normal_avg if normal_avg else None
+
+        ratios = {kw: r for kw in RATIO_KEYWORDS if (r := holiday_ratio(kw)) is not None}
+
+        if ratios:
+            st.markdown('<div class="section-title" style="font-size:16px; margin-top:24px;">명절 시즌 쏠림 배율</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-desc">명절 구간(추석·설날 전후) 평균 ÷ 평시 구간 평균 — 키워드별 계절 쏠림 정도</div>', unsafe_allow_html=True)
+
+            sorted_kw = sorted(ratios, key=ratios.get, reverse=True)
+            chart_card_open("키워드별 명절/평시 검색 배율")
+            f_ratio = go.Figure(go.Bar(
+                x=sorted_kw, y=[ratios[kw] for kw in sorted_kw],
+                marker_color=[GOLD if kw == "명절 선물세트" else TONE_DOWN for kw in sorted_kw],
+                text=[f"{ratios[kw]:.1f}배" for kw in sorted_kw],
+                textposition="outside",
+            ))
+            f_ratio.update_yaxes(title_text="명절/평시 배율(×)")
+            st.plotly_chart(base_layout(f_ratio, height=320, legend=False), use_container_width=True)
+            chart_card_close()
+
+            top_kw = sorted_kw[0]
+            rest_vals = [ratios[kw] for kw in sorted_kw if kw != top_kw]
+            insight(f"&ldquo;{top_kw}&rdquo;처럼 <b>명절이라는 단어가 박힌 키워드만 극단적으로 쏠리며({ratios[top_kw]:.1f}배)</b>, "
+                    f"건강 선물·비타민 선물·센스있는 선물·오쏘몰 등 나머지 키워드는 <b>{min(rest_vals):.1f}~{max(rest_vals):.1f}배 사이의 완만한 계절성</b>을 보입니다 "
+                    f"— 즉 건강·비타민 계열 선물은 명절이라는 특정 시즌에 갇혀있지 않습니다.")
     else:
         missing_note("naver_gift_tone_trend.csv")
 
