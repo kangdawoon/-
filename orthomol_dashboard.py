@@ -678,6 +678,24 @@ with tab1:
         insight(f"<b>{len(RECIPIENT_AGES)}개 연령대 x {len(RECIPIENT_KEYWORDS)}개 대상 = {len(RECIPIENT_AGES) * len(RECIPIENT_KEYWORDS)}개 구간 모두 "
                 f"{rmin:.1f}~{rmax:.1f} 범위에 분포하며 0에 가까운 값이 없습니다</b> — 20~30대는 특정 관계에 치우치지 않고 "
                 f"상사·거래처·부모님·동료·첫만남 등 다양한 관계에서 고르게 선물 검색 관심을 보입니다.")
+        st.markdown('<div class="section-title">20~30대가 챙겨야 할 관계의 우선순위</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-desc">19~24세~35~39세 평균 — 어떤 관계가 상대적으로 더 신경 쓰이나</div>', unsafe_allow_html=True)
+
+        recipient_means = gr.groupby("키워드")["평균검색관심도"].mean().reindex(RECIPIENT_KEYWORDS).sort_values(ascending=False)
+
+        chart_card_open("대상별 평균 검색 관심도 (20~30대 평균)")
+        f_rank = go.Figure(go.Bar(
+            x=recipient_means.index, y=recipient_means.values,
+            marker_color=GOLD,
+            text=[f"{v:.1f}" for v in recipient_means.values],
+            textposition="outside",
+        ))
+        st.plotly_chart(base_layout(f_rank, height=320, legend=False), use_container_width=True)
+        chart_card_close()
+
+        insight("20~30대가 신경 쓰는 관계는 가족(부모님)뿐 아니라 <b>새로운 인연(첫만남)과 직장 내 관계(상사·거래처·동료)까지 폭넓게 걸쳐 있습니다</b> "
+                "— 학생 시기에는 크지 않았을 &ldquo;상사·거래처·첫만남&rdquo;이라는 관계가 사회 진출과 함께 새롭게 추가되며, "
+                "<b>챙겨야 할 대상의 범위 자체가 넓어지고 있음</b>을 보여줍니다.")
     else:
         missing_note("naver_gift_recipient_demographics.csv")
 
