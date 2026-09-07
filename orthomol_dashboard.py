@@ -660,6 +660,29 @@ with tab1:
             insight(f"&ldquo;{top_kw}&rdquo;처럼 <b>명절이라는 단어가 박힌 키워드만 극단적으로 쏠리며({ratios[top_kw]:.1f}배)</b>, "
                     f"건강 선물·비타민 선물·센스있는 선물·오쏘몰 등 나머지 키워드는 <b>{min(rest_vals):.1f}~{max(rest_vals):.1f}배 사이의 완만한 계절성</b>을 보입니다 "
                     f"— 즉 건강·비타민 계열 선물은 명절이라는 특정 시즌에 갇혀있지 않습니다.")
+
+            st.markdown('<div class="section-title" style="font-size:16px; margin-top:24px;">오쏘몰의 카테고리 적합성</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-desc">선물시장에서 꾸준한 관심을 보이는 건강선물·비타민선물 등으로 오쏘몰은 아주 적합하다</div>', unsafe_allow_html=True)
+
+            fit_col1, fit_col2 = st.columns(2)
+            with fit_col1:
+                st.markdown(f"""
+                <div style="background:{CARD}; border:1px solid {LINE}; border-radius:14px; padding:18px 20px; min-height:150px;
+                            box-shadow:0 1px 2px rgba(15,17,21,0.03);">
+                    <div style="font-family:'Inter',sans-serif; font-size:15px; font-weight:800; color:{AMBER}; margin-bottom:8px;">명절에 갇히지 않음</div>
+                    <div style="font-size:13px; color:{TEXT_MAIN}; line-height:1.7;">건강·비타민 선물은 명절 선물세트의 극단적 쏠림(16.7배)과 달리 완만한 계절성(1.4~1.5배)을 보입니다.</div>
+                    <div style="font-size:10.5px; color:{TEXT_SUB}; margin-top:10px;">(앞선 &ldquo;명절 시즌 쏠림 배율&rdquo; 섹션 참고)</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with fit_col2:
+                st.markdown(f"""
+                <div style="background:{CARD}; border:1px solid {LINE}; border-radius:14px; padding:18px 20px; min-height:150px;
+                            box-shadow:0 1px 2px rgba(15,17,21,0.03);">
+                    <div style="font-family:'Inter',sans-serif; font-size:15px; font-weight:800; color:{AMBER}; margin-bottom:8px;">이미 강세 카테고리</div>
+                    <div style="font-size:13px; color:{TEXT_MAIN}; line-height:1.7;">비타민은 영양제 선물 카테고리 중 최강세로, 2위 유산균 대비 4배 이상 높은 검색 관심도를 보입니다.</div>
+                    <div style="font-size:10.5px; color:{TEXT_SUB}; margin-top:10px;">(앞선 섹션 참고)</div>
+                </div>
+                """, unsafe_allow_html=True)
     else:
         missing_note("naver_gift_tone_trend.csv")
 
