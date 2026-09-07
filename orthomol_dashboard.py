@@ -662,18 +662,20 @@ with tab1:
                     f"— 즉 건강·비타민 계열 선물은 명절이라는 특정 시즌에 갇혀있지 않습니다.")
 
             st.markdown('<div class="section-title" style="font-size:16px; margin-top:24px;">오쏘몰의 카테고리 적합성</div>', unsafe_allow_html=True)
-            st.markdown('<div class="section-desc">선물시장에서 꾸준한 관심을 보이는 건강선물·비타민선물 등으로 오쏘몰은 아주 적합하다</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-desc">연중 꾸준한 수요 기반 위에, 오쏘몰이 이미 강세인 카테고리이기에 시장 적합성이 확보된다</div>', unsafe_allow_html=True)
 
             fit_col1, fit_col2 = st.columns(2)
             with fit_col1:
-                st.markdown(f"""
-                <div style="background:{CARD}; border:1px solid {LINE}; border-radius:14px; padding:18px 20px; min-height:150px;
-                            box-shadow:0 1px 2px rgba(15,17,21,0.03);">
-                    <div style="font-family:'Inter',sans-serif; font-size:15px; font-weight:800; color:{AMBER}; margin-bottom:8px;">명절에 갇히지 않음</div>
-                    <div style="font-size:13px; color:{TEXT_MAIN}; line-height:1.7;">건강·비타민 선물은 명절 선물세트의 극단적 쏠림(16.7배)과 달리 완만한 계절성(1.4~1.5배)을 보입니다.</div>
-                    <div style="font-size:10.5px; color:{TEXT_SUB}; margin-top:10px;">(앞선 &ldquo;명절 시즌 쏠림 배율&rdquo; 섹션 참고)</div>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f'<div style="background:{CARD}; border:1px solid {LINE}; border-radius:14px; '
+                            f'padding:10px 10px 4px 10px; box-shadow:0 1px 2px rgba(15,17,21,0.03);">', unsafe_allow_html=True)
+                f_fit1 = go.Figure(go.Bar(x=rest_kw, y=[ratios[kw] for kw in rest_kw], marker_color=GOLD))
+                f_fit1.update_yaxes(showticklabels=False, title=None, range=[0, 2], showgrid=False)
+                f_fit1.update_xaxes(tickfont=dict(size=9), tickangle=-20, title=None)
+                fig_fit1 = base_layout(f_fit1, height=250, legend=False)
+                fig_fit1.update_layout(margin=dict(t=8, b=30, l=4, r=4))
+                st.plotly_chart(fig_fit1, use_container_width=True, config={"displayModeBar": False})
+                st.markdown(f'<div style="font-size:11px; color:{TEXT_SUB}; text-align:center; margin:-6px 0 8px 0;">'
+                            f'명절과 무관한 완만한 흐름 (5번 참고)</div></div>', unsafe_allow_html=True)
             with fit_col2:
                 st.markdown(f"""
                 <div style="background:{CARD}; border:1px solid {LINE}; border-radius:14px; padding:18px 20px; min-height:150px;
