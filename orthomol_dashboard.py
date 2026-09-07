@@ -1026,6 +1026,64 @@ with tab4:
     else:
         missing_note("naver_search_trend.csv", "google_trend_kr.csv")
 
+# ============================================================
+# 최종 메시지: 고민 없는 선물
+# ============================================================
+st.markdown('<div class="section-title" style="margin-top:32px;">최종 메시지: 고민 없는 선물</div>', unsafe_allow_html=True)
+st.markdown(f"""
+<div style="font-family:'Inter',sans-serif; font-size:26px; font-weight:800; letter-spacing:-0.02em;
+            color:{INK}; line-height:1.4; margin:8px 0 24px 0;">
+오래 고민하지 않아도 되는,<br>누구에게나 줘도 센스있고 적당한 선물
+</div>
+""", unsafe_allow_html=True)
+
+REASON_FOR = {"프리미엄 이미지": 39, "효과·성분": 24, "구성·혜택": 22, "브랜드 신뢰": 16}
+REASON_AGAINST = {"가격 부담": 5, "취향 안 맞음": 3, "고민됨·확신없음": 0}
+MUTED = "#D5D7DC"
+
+col_final1, col_final2 = st.columns(2)
+with col_final1:
+    chart_card_open("오쏘몰을 선물로 정한 이유")
+    f_for = go.Figure(go.Bar(
+        x=list(REASON_FOR.keys()), y=list(REASON_FOR.values()), marker_color=GOLD,
+        text=[str(v) for v in REASON_FOR.values()], textposition="outside",
+    ))
+    st.plotly_chart(base_layout(f_for, height=300, legend=False), use_container_width=True)
+    chart_card_close()
+
+with col_final2:
+    chart_card_open("오쏘몰을 꺼리는 이유")
+    against_colors = [RUST if k == "가격 부담" else MUTED for k in REASON_AGAINST]
+    f_against = go.Figure(go.Bar(
+        x=list(REASON_AGAINST.keys()), y=list(REASON_AGAINST.values()), marker_color=against_colors,
+        text=[str(v) for v in REASON_AGAINST.values()], textposition="outside",
+    ))
+    f_against.add_annotation(x="고민됨·확신없음", y=0, text="확신이 없어서가 아니라<br>가격이 유일한 걸림돌",
+                              showarrow=False, yshift=45, font=dict(size=10.5, color=TEXT_SUB))
+    st.plotly_chart(base_layout(f_against, height=300, legend=False), use_container_width=True)
+    chart_card_close()
+
+FINAL_TAGS = [
+    ("고민하지 않아도", "&ldquo;상황마다 매번 새로 찾아야 하는 선물추천&rdquo; 섹션 참조"),
+    ("누구에게나", "&ldquo;20~30대의 다양한 선물 대상&rdquo; 섹션 참조"),
+    ("센스있고", "프리미엄 이미지 39건 — 4개 이유 중 압도적 1위"),
+    ("적당한", "효과·성분(24) + 구성·혜택(22)"),
+]
+tag_cols = st.columns(4)
+for col, (tag, desc) in zip(tag_cols, FINAL_TAGS):
+    with col:
+        st.markdown(f"""
+        <div style="background:{CARD}; border:1px solid {LINE}; border-radius:14px; padding:16px; height:128px;
+                    box-shadow: 0 1px 2px rgba(15,17,21,0.03);">
+            <div style="font-family:'Inter',sans-serif; font-size:16px; font-weight:800; color:{AMBER}; margin-bottom:8px;">{tag}</div>
+            <div style="font-size:11.5px; color:{TEXT_SUB}; line-height:1.6;">{desc}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+st.markdown(f'<div style="font-size:11px; color:{TEXT_SUB}; margin:16px 0 8px 0; line-height:1.6;">'
+            f'※ 네이버 블로그·카페 게시물 텍스트 키워드 빈도 기반 간이분석(총 149건), 게시물 대상이 20~30대로 언급된 글 기준이며 '
+            f'글쓴이 나이는 아님</div>', unsafe_allow_html=True)
+
 st.markdown(f"""
 <div style="margin-top:36px; padding-top:16px; border-top:1px solid {LINE}; font-family:'Inter',sans-serif;
             font-size:11.5px; color:{TEXT_SUB}; line-height:1.7;">
