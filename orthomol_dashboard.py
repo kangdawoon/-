@@ -1033,7 +1033,7 @@ st.markdown('<div class="section-title" style="margin-top:32px;">최종 메시�
 st.markdown(f"""
 <div style="font-family:'Inter',sans-serif; font-size:26px; font-weight:800; letter-spacing:-0.02em;
             color:{INK}; line-height:1.4; margin:8px 0 24px 0;">
-오래 고민하지 않아도 되는,<br>누구에게나 줘도 센스있고 적당한 선물
+오래 고민하지 않아도 되는, 누구에게나 줘도 센스있고 적당한 선물
 </div>
 """, unsafe_allow_html=True)
 
@@ -1064,8 +1064,8 @@ with col_final2:
     chart_card_close()
 
 FINAL_TAGS = [
-    ("고민하지 않아도", "&ldquo;상황마다 매번 새로 찾아야 하는 선물추천&rdquo; 섹션 참조"),
-    ("누구에게나", "&ldquo;20~30대의 다양한 선물 대상&rdquo; 섹션 참조"),
+    ("고민하지 않아도", "5개 상황(부모님·상사·생일·첫만남·지인) 모두 검색량 33~67 구간"),
+    ("누구에게나", "상사·거래처·부모님·동료·첫만남 5개 관계 모두에서 의미있는 검색"),
     ("센스있고", "프리미엄 이미지 39건 — 4개 이유 중 압도적 1위"),
     ("적당한", "효과·성분(24) + 구성·혜택(22)"),
 ]
