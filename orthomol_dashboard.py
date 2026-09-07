@@ -637,19 +637,26 @@ with tab1:
             st.markdown('<div class="section-desc">명절 구간(추석·설날 전후) 평균 ÷ 평시 구간 평균 — 키워드별 계절 쏠림 정도</div>', unsafe_allow_html=True)
 
             sorted_kw = sorted(ratios, key=ratios.get, reverse=True)
-            chart_card_open("키워드별 명절/평시 검색 배율")
+            top_kw = sorted_kw[0]
+            rest_kw = [kw for kw in sorted_kw if kw != top_kw]
+
+            st.markdown(f'<div style="background:{SURFACE}; border:1px solid {LINE}; border-radius:10px; '
+                        f'padding:7px 14px; font-size:11.5px; color:{TEXT_SUB}; margin-bottom:10px; display:inline-block;">'
+                        f'참고: &ldquo;{top_kw}&rdquo;만 <b style="color:{TEXT_MAIN};">{ratios[top_kw]:.1f}배</b> 극단적 쏠림 (비교 기준, 아래 차트에서는 제외)</div>',
+                        unsafe_allow_html=True)
+
+            chart_card_open("키워드별 명절/평시 검색 배율", f"&ldquo;{top_kw}&rdquo; 제외 — 나머지 {len(rest_kw)}개 키워드의 차이에 집중")
             f_ratio = go.Figure(go.Bar(
-                x=sorted_kw, y=[ratios[kw] for kw in sorted_kw],
-                marker_color=[GOLD if kw == "명절 선물세트" else TONE_DOWN for kw in sorted_kw],
-                text=[f"{ratios[kw]:.1f}배" for kw in sorted_kw],
+                x=rest_kw, y=[ratios[kw] for kw in rest_kw],
+                marker_color=GOLD,
+                text=[f"{ratios[kw]:.1f}배" for kw in rest_kw],
                 textposition="outside",
             ))
-            f_ratio.update_yaxes(title_text="명절/평시 배율(×)")
+            f_ratio.update_yaxes(title_text="명절/평시 배율(×)", range=[0, 2])
             st.plotly_chart(base_layout(f_ratio, height=320, legend=False), use_container_width=True)
             chart_card_close()
 
-            top_kw = sorted_kw[0]
-            rest_vals = [ratios[kw] for kw in sorted_kw if kw != top_kw]
+            rest_vals = [ratios[kw] for kw in rest_kw]
             insight(f"&ldquo;{top_kw}&rdquo;처럼 <b>명절이라는 단어가 박힌 키워드만 극단적으로 쏠리며({ratios[top_kw]:.1f}배)</b>, "
                     f"건강 선물·비타민 선물·센스있는 선물·오쏘몰 등 나머지 키워드는 <b>{min(rest_vals):.1f}~{max(rest_vals):.1f}배 사이의 완만한 계절성</b>을 보입니다 "
                     f"— 즉 건강·비타민 계열 선물은 명절이라는 특정 시즌에 갇혀있지 않습니다.")
