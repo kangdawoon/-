@@ -1063,22 +1063,65 @@ with col_final2:
     st.plotly_chart(base_layout(f_against, height=300, legend=False), use_container_width=True)
     chart_card_close()
 
-FINAL_TAGS = [
-    ("고민하지 않아도", "5개 상황(부모님·상사·생일·첫만남·지인) 모두 검색량 33~67 구간"),
-    ("누구에게나", "상사·거래처·부모님·동료·첫만남 5개 관계 모두에서 의미있는 검색"),
-    ("센스있고", "프리미엄 이미지 39건 — 4개 이유 중 압도적 1위"),
-    ("적당한", "효과·성분(24) + 구성·혜택(22)"),
-]
+def mini_bar_fig(labels, values, colors):
+    fig = go.Figure(go.Bar(x=labels, y=values, marker_color=colors))
+    fig = base_layout(fig, height=150, legend=False)
+    fig.update_xaxes(tickfont=dict(size=8.5), tickangle=-30, title=None)
+    fig.update_yaxes(showticklabels=False, title=None, showgrid=False, zeroline=False)
+    fig.update_layout(margin=dict(t=6, b=30, l=4, r=4))
+    return fig
+
+
+def tag_card_open(label):
+    st.markdown(f'<div style="background:{CARD}; border:1px solid {LINE}; border-radius:14px; '
+                f'padding:14px 12px 10px 12px; box-shadow:0 1px 2px rgba(15,17,21,0.03);">'
+                f'<div style="font-family:\'Inter\',sans-serif; font-size:15px; font-weight:800; color:{AMBER}; margin-bottom:2px;">{label}</div>',
+                unsafe_allow_html=True)
+
+
+def tag_card_close(caption):
+    st.markdown(f'<div style="font-size:11px; color:{TEXT_SUB}; text-align:center; margin-top:-4px;">{caption}</div></div>',
+                unsafe_allow_html=True)
+
+
+TAG_AGES = ["19~24세", "25~29세", "30~34세", "35~39세"]
 tag_cols = st.columns(4)
-for col, (tag, desc) in zip(tag_cols, FINAL_TAGS):
-    with col:
-        st.markdown(f"""
-        <div style="background:{CARD}; border:1px solid {LINE}; border-radius:14px; padding:16px; height:128px;
-                    box-shadow: 0 1px 2px rgba(15,17,21,0.03);">
-            <div style="font-family:'Inter',sans-serif; font-size:16px; font-weight:800; color:{AMBER}; margin-bottom:8px;">{tag}</div>
-            <div style="font-size:11.5px; color:{TEXT_SUB}; line-height:1.6;">{desc}</div>
-        </div>
-        """, unsafe_allow_html=True)
+
+with tag_cols[0]:
+    tag_card_open("고민하지 않아도")
+    if gift_recommend_df is not None:
+        c1_map = {"부모님 선물추천": "부모님", "상사 선물추천": "상사", "생일선물 추천": "생일",
+                  "첫만남 선물추천": "첫만남", "지인 선물추천": "지인"}
+        c1 = gift_recommend_df[gift_recommend_df["키워드"].isin(c1_map) & gift_recommend_df["연령대"].isin(TAG_AGES)]
+        c1_means = c1.groupby("키워드")["평균검색관심도"].mean().reindex(c1_map.keys())
+        st.plotly_chart(mini_bar_fig([c1_map[k] for k in c1_means.index], c1_means.values, GOLD),
+                         use_container_width=True, config={"displayModeBar": False})
+    tag_card_close("5개 상황 모두 33~67 구간")
+
+with tag_cols[1]:
+    tag_card_open("누구에게나")
+    if gift_recipient_df is not None:
+        c2_map = {"상사 선물": "상사", "거래처 선물": "거래처", "부모님 선물": "부모님", "동료 선물": "동료", "첫만남 선물": "첫만남"}
+        c2 = gift_recipient_df[gift_recipient_df["키워드"].isin(c2_map) & gift_recipient_df["연령대"].isin(TAG_AGES)]
+        c2_means = c2.groupby("키워드")["평균검색관심도"].mean().reindex(c2_map.keys())
+        st.plotly_chart(mini_bar_fig([c2_map[k] for k in c2_means.index], c2_means.values, STEEL),
+                         use_container_width=True, config={"displayModeBar": False})
+    tag_card_close("5개 관계 모두 22.8~61.8 구간")
+
+with tag_cols[2]:
+    tag_card_open("센스있고")
+    c3_colors = [GOLD if k == "프리미엄 이미지" else MUTED for k in REASON_FOR]
+    st.plotly_chart(mini_bar_fig(list(REASON_FOR.keys()), list(REASON_FOR.values()), c3_colors),
+                     use_container_width=True, config={"displayModeBar": False})
+    tag_card_close("프리미엄 이미지, 압도적 1위")
+
+with tag_cols[3]:
+    tag_card_open("적당한")
+    c4_labels = ["긍정 요인", "가격 부담"]
+    c4_values = [REASON_FOR["효과·성분"] + REASON_FOR["구성·혜택"], REASON_AGAINST["가격 부담"]]
+    st.plotly_chart(mini_bar_fig(c4_labels, c4_values, [SAGE, RUST]),
+                     use_container_width=True, config={"displayModeBar": False})
+    tag_card_close(f"긍정 요인 {c4_values[0]}건 vs 가격부담 {c4_values[1]}건")
 
 st.markdown(f'<div style="font-size:11px; color:{TEXT_SUB}; margin:16px 0 8px 0; line-height:1.6;">'
             f'※ 네이버 블로그·카페 게시물 텍스트 키워드 빈도 기반 간이분석(총 149건), 게시물 대상이 20~30대로 언급된 글 기준이며 '
