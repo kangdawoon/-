@@ -291,6 +291,7 @@ news_keyword_df = safe_excel("오쏘몰_키워드.xlsx")
 related_words_df = safe_excel("연관어분석_20260828.xlsx")
 gift_tone_df = safe_csv("naver_gift_tone_trend.csv")
 gift_recipient_df = safe_csv("naver_gift_recipient_demographics.csv")
+gift_recommend_df = safe_csv("naver_gift_recommend_variants.csv")
 
 if brand_df is not None:
     brand_df["기간"] = pd.to_datetime(brand_df["기간"])
@@ -698,6 +699,34 @@ with tab1:
                 "<b>챙겨야 할 대상의 범위 자체가 넓어지고 있음</b>을 보여줍니다.")
     else:
         missing_note("naver_gift_recipient_demographics.csv")
+
+    st.markdown('<div class="section-title">상황마다 매번 새로 찾아야 하는 선물추천</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-desc">상황별 &ldquo;~선물추천&rdquo; 검색어를 20~30대가 얼마나 검색하나</div>', unsafe_allow_html=True)
+
+    if gift_recommend_df is not None:
+        RECOMMEND_AGES = ["19~24세", "25~29세", "30~34세", "35~39세"]
+        RECOMMEND_KEYWORDS = ["부모님 선물추천", "상사 선물추천", "생일선물 추천", "첫만남 선물추천", "지인 선물추천"]
+        recommend_age_colors = {"19~24세": STEEL, "25~29세": PLUM, "30~34세": GOLD, "35~39세": SAGE}
+
+        grv = gift_recommend_df[gift_recommend_df["키워드"].isin(RECOMMEND_KEYWORDS) & gift_recommend_df["연령대"].isin(RECOMMEND_AGES)]
+
+        chart_card_open("상황별 선물추천 키워드 x 연령대 검색 관심도")
+        f_recommend = go.Figure()
+        for age in RECOMMEND_AGES:
+            gd = grv[grv["연령대"] == age].set_index("키워드").reindex(RECOMMEND_KEYWORDS)
+            f_recommend.add_trace(go.Bar(x=RECOMMEND_KEYWORDS, y=gd["평균검색관심도"], name=age, marker_color=recommend_age_colors[age]))
+        f_recommend.update_layout(barmode="group")
+        st.plotly_chart(base_layout(f_recommend, height=360), use_container_width=True)
+        st.markdown(f'<div style="font-size:11.5px; color:{TEXT_SUB}; margin-top:-4px;">'
+                    f'※ &ldquo;센스있는 선물추천&rdquo;·&ldquo;적당한 선물추천&rdquo;은 표본 부족으로 제외</div>', unsafe_allow_html=True)
+        chart_card_close()
+
+        vmin, vmax = grv["평균검색관심도"].min(), grv["평균검색관심도"].max()
+        insight(f"<b>5개의 서로 다른 상황별 &ldquo;선물추천&rdquo; 검색어 모두 20~30대 전 구간에서 {vmin:.1f}~{vmax:.1f}의 고른 검색량을 보입니다</b> "
+                f"— 한 번의 검색으로 끝나지 않고, 상황이 바뀔 때마다(부모님/상사/생일/첫만남/지인) "
+                f"<b>매번 새로운 추천을 다시 찾아봐야 하는 반복적인 의사결정 부담</b>을 보여줍니다.")
+    else:
+        missing_note("naver_gift_recommend_variants.csv")
 
     st.markdown('<div class="section-title">참고 — 연령·성별로 본 선물 니즈의 배경</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-desc">선물 니즈 자체는 전 연령대에 고르게 나타남 — 아래는 배경 참고 데이터</div>', unsafe_allow_html=True)
