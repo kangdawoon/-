@@ -290,6 +290,7 @@ youtube_df = safe_csv("youtube_content.csv")
 news_keyword_df = safe_excel("오쏘몰_키워드.xlsx")
 related_words_df = safe_excel("연관어분석_20260828.xlsx")
 gift_tone_df = safe_csv("naver_gift_tone_trend.csv")
+gift_recipient_df = safe_csv("naver_gift_recipient_demographics.csv")
 
 if brand_df is not None:
     brand_df["기간"] = pd.to_datetime(brand_df["기간"])
@@ -653,6 +654,32 @@ with tab1:
                     f"— 즉 건강·비타민 계열 선물은 명절이라는 특정 시즌에 갇혀있지 않습니다.")
     else:
         missing_note("naver_gift_tone_trend.csv")
+
+    st.markdown('<div class="section-title">20~30대의 다양한 선물 대상</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-desc">상사·거래처·부모님·동료·첫만남 — 대상별 선물 키워드를 누가 검색하나</div>', unsafe_allow_html=True)
+
+    if gift_recipient_df is not None:
+        RECIPIENT_AGES = ["19~24세", "25~29세", "30~34세", "35~39세"]
+        RECIPIENT_KEYWORDS = ["상사 선물", "거래처 선물", "부모님 선물", "동료 선물", "첫만남 선물"]
+        age_colors = {"19~24세": STEEL, "25~29세": PLUM, "30~34세": GOLD, "35~39세": SAGE}
+
+        gr = gift_recipient_df[gift_recipient_df["연령대"].isin(RECIPIENT_AGES)]
+
+        chart_card_open("연령대별 대상별 선물 키워드 검색 관심도", "0~12세 등 검색량이 극히 적은 구간은 제외")
+        f_recipient = go.Figure()
+        for age in RECIPIENT_AGES:
+            gd = gr[gr["연령대"] == age].set_index("키워드").reindex(RECIPIENT_KEYWORDS)
+            f_recipient.add_trace(go.Bar(x=RECIPIENT_KEYWORDS, y=gd["평균검색관심도"], name=age, marker_color=age_colors[age]))
+        f_recipient.update_layout(barmode="group")
+        st.plotly_chart(base_layout(f_recipient, height=360), use_container_width=True)
+        chart_card_close()
+
+        rmin, rmax = gr["평균검색관심도"].min(), gr["평균검색관심도"].max()
+        insight(f"<b>{len(RECIPIENT_AGES)}개 연령대 x {len(RECIPIENT_KEYWORDS)}개 대상 = {len(RECIPIENT_AGES) * len(RECIPIENT_KEYWORDS)}개 구간 모두 "
+                f"{rmin:.1f}~{rmax:.1f} 범위에 분포하며 0에 가까운 값이 없습니다</b> — 20~30대는 특정 관계에 치우치지 않고 "
+                f"상사·거래처·부모님·동료·첫만남 등 다양한 관계에서 고르게 선물 검색 관심을 보입니다.")
+    else:
+        missing_note("naver_gift_recipient_demographics.csv")
 
     st.markdown('<div class="section-title">참고 — 연령·성별로 본 선물 니즈의 배경</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-desc">선물 니즈 자체는 전 연령대에 고르게 나타남 — 아래는 배경 참고 데이터</div>', unsafe_allow_html=True)
