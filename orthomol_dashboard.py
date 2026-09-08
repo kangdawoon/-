@@ -201,20 +201,27 @@ st.markdown(f'<div class="kpi-strip">{kpi_html_str}</div>', unsafe_allow_html=Tr
 # ============================================================
 section_header(1, "선두주자, 그리고 프리미엄", "오쏘몰은 액상형 멀티비타민 시장을 프리미엄 포지셔닝으로 이끌어왔다")
 
+k1, k2, k3, k4 = st.columns(4)
+with k1:
+    st.markdown(kpi_html("2024년 연매출", "1,302억", "▲ 8.1% 전년대비", "up"), unsafe_allow_html=True)
+with k2:
+    st.markdown(kpi_html("국내 멀티비타민 시장 순위", "1위", "3년 연속 (2023~2025)", "up"), unsafe_allow_html=True)
+with k3:
+    st.markdown(kpi_html("카카오 선물하기 역대 최고 순위", "1위", "전체 카테고리 통틀어 (2023.08)", "up"), unsafe_allow_html=True)
+with k4:
+    st.markdown(kpi_html("주요 판매채널 수", "6개", "백화점→올리브영→편의점 확장", "flat"), unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
 col1, col2 = st.columns(2)
 with col1:
-    if channel_df is not None:
-        chart_card_open("선물 채널 언급량 — 오쏘몰 vs 경쟁사", "카카오선물하기 · 올리브영")
-        fig = go.Figure()
-        for ch in channel_df["채널"].unique():
-            d = channel_df[channel_df["채널"] == ch]
-            fig.add_trace(go.Bar(x=d["브랜드"], y=d["언급량"], name=ch,
-                                  marker_color=AMBER if ch == "카카오선물하기" else STEEL))
-        fig.update_layout(barmode="group")
-        st.plotly_chart(base_layout(fig, height=280), use_container_width=True)
-        chart_card_close()
-    else:
-        missing("선물채널_언급량.csv")
+    chart_card_open("5개년 매출 성장 추이", "동아제약 공식 발표 · 단위 억원")
+    years5 = ["2020", "2021", "2022", "2023", "2024"]
+    vals5 = [87, 284, 655, 1204, 1302]
+    fig = go.Figure(go.Bar(x=years5, y=vals5, marker_color=AMBER,
+                            text=[f"{v}억" for v in vals5], textposition="outside"))
+    st.plotly_chart(base_layout(fig, height=280, legend=False), use_container_width=True)
+    chart_card_close()
 
 with col2:
     if price_df is not None:
@@ -228,10 +235,11 @@ with col2:
     else:
         missing("종합비타민_가격비교.csv")
 
-if channel_df is not None and price_df is not None:
+if price_df is not None:
     price_ratio = price_df[price_df["브랜드"] == "오쏘몰"]["1일 환산가(최저가 기준)"].iloc[0] / price_df[price_df["브랜드"] == "고려은단"]["1일 환산가(최저가 기준)"].iloc[0]
-    insight(f"오쏘몰은 카카오선물하기·올리브영 두 <b>선물 채널</b>에서 경쟁사(아임비타·에너씨슬) 대비 압도적 언급량을 기록한다. "
-            f"가격 면에서도 1일 환산가가 고려은단 대비 약 <b>{price_ratio:.1f}배</b> 높아, &ldquo;프리미엄&rdquo;이라는 포지셔닝이 정성적 인상이 아닌 <b>실제 가격 데이터로 확인</b>된다.")
+    insight(f"오쏘몰은 5년간 매출이 <b>약 15배</b> 성장(87억→1,302억)하며 <b>국내 멀티비타민 시장 판매금액 1위를 3년 연속</b> 지켰고, "
+            f"카카오 선물하기에서도 전체 카테고리를 통틀어 1위를 기록했다. 가격 면에서도 1일 환산가가 고려은단 대비 약 <b>{price_ratio:.1f}배</b> 높아, "
+            f"&ldquo;프리미엄&rdquo;이라는 포지셔닝이 정성적 인상이 아닌 <b>실제 시장 지위와 가격 데이터로 확인</b>된다.")
 
 st.divider()
 
@@ -255,11 +263,15 @@ with col3:
         missing("naver_search_trend.csv")
 
 with col4:
-    chart_card_open("2025년 1분기 매출 추이", "동아제약 공식 발표 기준")
-    years = ["2020", "2021", "2022", "2023", "2024"]
-    vals = [87, 284, 655, 1204, 1302]
-    fig = go.Figure(go.Bar(x=years, y=vals, marker_color=AMBER))
-    fig.add_annotation(x="2024", y=1302, text="1,302억", showarrow=False, yshift=15, font=dict(size=11, color=INK))
+    chart_card_open("연매출 추이 + 2025년 1분기 신호", "동아제약 공식 발표 기준 · 2025는 1분기 매출(연환산 아님)")
+    years = ["2020", "2021", "2022", "2023", "2024", "2025 (1Q)"]
+    vals = [87, 284, 655, 1204, 1302, 302]
+    x_idx = list(range(len(years)))
+    colors_rev = [AMBER] * 5 + [RUST]
+    fig = go.Figure(go.Bar(x=x_idx, y=vals, marker_color=colors_rev))
+    fig.update_xaxes(tickmode="array", tickvals=x_idx, ticktext=years)
+    fig.add_annotation(x=4, y=1302, text="1,302억", showarrow=False, yshift=15, font=dict(size=11, color=INK))
+    fig.add_annotation(x=5, y=302, text="302억<br>전년동기 -3.9%<br>전분기 -12.7%", showarrow=False, yshift=32, font=dict(size=10, color=RUST))
     st.plotly_chart(base_layout(fig, height=300, legend=False), use_container_width=True)
     chart_card_close()
 
@@ -531,31 +543,29 @@ st.divider()
 # ============================================================
 section_header(11, "반복되는 선물 고민", "상황이 바뀔 때마다 매번 새로운 추천을 검색해야 하는 부담이 있다")
 
-col7, col8 = st.columns(2)
-with col7:
-    if recommend_df is not None:
-        chart_card_open("상황별 '선물추천' 검색 관심도", "센스있는/적당한 선물추천은 표본 부족으로 제외")
-        d = recommend_df[recommend_df["연령대"].isin(AGE_ORDER_4)]
-        fig = go.Figure()
-        for age, color in zip(AGE_ORDER_4, [STEEL, PLUM, AMBER, SAGE]):
-            dd = d[d["연령대"] == age]
-            fig.add_trace(go.Bar(x=dd["키워드"], y=dd["평균검색관심도"], name=age, marker_color=color))
-        fig.update_layout(barmode="group")
-        st.plotly_chart(base_layout(fig, height=280), use_container_width=True)
-        chart_card_close()
-    else:
-        missing("naver_gift_recommend_variants.csv")
+if recommend_df is not None:
+    chart_card_open("상황별 '선물추천' 검색 관심도", "센스있는/적당한 선물추천은 표본 부족으로 제외")
+    d = recommend_df[recommend_df["연령대"].isin(AGE_ORDER_4)]
+    fig = go.Figure()
+    for age, color in zip(AGE_ORDER_4, [STEEL, PLUM, AMBER, SAGE]):
+        dd = d[d["연령대"] == age]
+        fig.add_trace(go.Bar(x=dd["키워드"], y=dd["평균검색관심도"], name=age, marker_color=color))
+    fig.update_layout(barmode="group")
+    fig.update_xaxes(tickangle=0)
+    st.plotly_chart(base_layout(fig, height=320), use_container_width=True)
+    chart_card_close()
+else:
+    missing("naver_gift_recommend_variants.csv")
 
-with col8:
-    if worry_brand_df is not None:
-        chart_card_open("'선물고민' 콘텐츠 내 브랜드 언급량", "네이버 블로그·카페 텍스트 분석")
-        d = worry_brand_df.sort_values("언급량", ascending=True)
-        colors = [AMBER if b == "오쏘몰" else GRAY for b in d["브랜드"]]
-        fig = go.Figure(go.Bar(x=d["언급량"], y=d["브랜드"], orientation="h", marker_color=colors))
-        st.plotly_chart(base_layout(fig, height=280, legend=False), use_container_width=True)
-        chart_card_close()
-    else:
-        missing("선물고민_브랜드별언급량.csv")
+if worry_brand_df is not None:
+    chart_card_open("'선물고민' 콘텐츠 내 브랜드 언급량", "네이버 블로그·카페 텍스트 분석")
+    d = worry_brand_df.sort_values("언급량", ascending=True)
+    colors = [AMBER if b == "오쏘몰" else GRAY for b in d["브랜드"]]
+    fig = go.Figure(go.Bar(x=d["언급량"], y=d["브랜드"], orientation="h", marker_color=colors))
+    st.plotly_chart(base_layout(fig, height=220, legend=False), use_container_width=True)
+    chart_card_close()
+else:
+    missing("선물고민_브랜드별언급량.csv")
 
 if worry_brand_df is not None:
     o_val = worry_brand_df[worry_brand_df["브랜드"] == "오쏘몰"]["언급량"].iloc[0]
@@ -582,7 +592,7 @@ with col9:
     st.plotly_chart(base_layout(fig, height=260, legend=False), use_container_width=True)
     chart_card_close()
 with col10:
-    chart_card_open("오쏘몰을 꺼리는 이유")
+    chart_card_open("오쏘몰을 꺼리는 이유", "20~30대 언급 게시물 총 149건 기준")
     colors = [RUST, GRAY, GRAY]
     fig = go.Figure(go.Bar(x=list(REASON_NEG.keys()), y=list(REASON_NEG.values()), marker_color=colors))
     st.plotly_chart(base_layout(fig, height=260, legend=False), use_container_width=True)
@@ -651,7 +661,6 @@ with t4:
 st.markdown(f"""
 <div style="margin-top:32px; padding-top:14px; border-top:1px solid {LINE}; font-size:10.5px; color:{TEXT_SUB}; line-height:1.7;">
 ※ 검색 관심도는 각 데이터셋 내 최고치를 100으로 하는 상대 지수이며, 실제 검색량(절대값)이 아닙니다.<br>
-※ 텍스트 기반 이유·감정 분석은 네이버 블로그·카페 게시물의 키워드 빈도 기반 간이분석이며, 실제 설문이 아닙니다.<br>
-※ 6번 섹션의 연령대별 구매 클릭 데이터는 현재 미확보 상태로, 추후 보강 예정입니다.
+※ 텍스트 기반 이유·감정 분석은 네이버 블로그·카페 게시물의 키워드 빈도 기반 간이분석이며, 실제 설문이 아닙니다.
 </div>
 """, unsafe_allow_html=True)
