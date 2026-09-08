@@ -229,15 +229,8 @@ with col2:
 
 if channel_df is not None and price_df is not None:
     price_ratio = price_df[price_df["브랜드"] == "오쏘몰"]["1일 환산가(최저가 기준)"].iloc[0] / price_df[price_df["브랜드"] == "고려은단"]["1일 환산가(최저가 기준)"].iloc[0]
-    insight(f"오쏘몰은 카카오선물하기·올리브영 두 채널 모두에서 경쟁사(아임비타·에너씨슬) 대비 압도적 언급량을 기록하며 <b>실제 선물 채널 내 1위</b>를 뒷받침한다. "
+    insight(f"오쏘몰은 카카오선물하기·올리브영 두 <b>선물 채널</b>에서 경쟁사(아임비타·에너씨슬) 대비 압도적 언급량을 기록한다. "
             f"가격 면에서도 1일 환산가가 고려은단 대비 약 <b>{price_ratio:.1f}배</b> 높아, &ldquo;프리미엄&rdquo;이라는 포지셔닝이 정성적 인상이 아닌 <b>실제 가격 데이터로 확인</b>된다.")
-
-if image_theme_df is not None:
-    chart_card_open("오쏘몰 콘텐츠 테마 비중", "네이버 블로그·카페 텍스트 키워드 기반 (복수 응답)")
-    d = image_theme_df.sort_values("건수", ascending=True)
-    fig = go.Figure(go.Bar(x=d["건수"], y=d["테마"], orientation="h", marker_color=AMBER))
-    st.plotly_chart(base_layout(fig, height=220, legend=False), use_container_width=True)
-    chart_card_close()
 
 st.divider()
 
@@ -397,6 +390,17 @@ if gift_cat_df is not None:
             "오쏘몰 '이뮨' 라인의 포지셔닝과 정확히 맞아떨어진다.")
 else:
     missing("연령별_선물카테고리_선호도.csv")
+
+if image_theme_df is not None:
+    chart_card_open("오쏘몰 콘텐츠 테마 비중", "네이버 블로그·카페 텍스트 키워드 기반 (복수 응답)")
+    d = image_theme_df.sort_values("건수", ascending=True)
+    colors_theme = [AMBER if t == "효과·건강기능" else GRAY for t in d["테마"]]
+    fig = go.Figure(go.Bar(x=d["건수"], y=d["테마"], orientation="h", marker_color=colors_theme))
+    st.plotly_chart(base_layout(fig, height=220, legend=False), use_container_width=True)
+    chart_card_close()
+    insight("오쏘몰 관련 콘텐츠에서도 &ldquo;효과·건강기능&rdquo; 테마가 84%로 압도적 1위를 차지한다 — "
+            "&ldquo;프리미엄·고가&rdquo; 테마(18%)보다 훨씬 높아, 소비자가 오쏘몰을 언급할 때 "
+            "<b>가격보다 효과를 먼저 떠올린다</b>는 것을 보여준다.")
 
 st.divider()
 
