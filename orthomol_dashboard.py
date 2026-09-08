@@ -476,11 +476,27 @@ st.markdown('<div class="section-desc">지금까지의 발견을 압축하면 �
 
 c1, c2, c3 = st.columns(3)
 with c1:
-    st.markdown('<div class="mini-tag"><div class="t">시장 기회</div><div class="v">5/5개</div><div class="d">20~30대가 모든 관계에서<br>선물 검색 관심 보임</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-tag"><div class="t">시장 기회</div><div class="v">5/5개</div></div>', unsafe_allow_html=True)
+    if recipient_df is not None:
+        d = recipient_df[recipient_df["연령대"].isin(AGE_ORDER_4)]
+        ranking = d.groupby("키워드")["평균검색관심도"].mean().sort_values(ascending=False)
+        fig = go.Figure(go.Bar(x=ranking.index, y=ranking.values, marker_color=AMBER))
+        fig.update_xaxes(showticklabels=False)
+        fig.update_yaxes(showticklabels=False)
+        st.plotly_chart(base_layout(fig, height=110, legend=False), use_container_width=True)
+    st.markdown('<div class="mini-tag" style="margin-top:-14px; border-top:none; border-radius:0 0 12px 12px;"><div class="d">20~30대가 모든 관계에서 선물 검색 관심 보임</div></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown('<div class="mini-tag"><div class="t">오쏘몰 강점</div><div class="v">1위</div><div class="d">영양제 중 비타민 카테고리<br>최강세</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-tag"><div class="t">오쏘몰 강점</div><div class="v">1위</div></div>', unsafe_allow_html=True)
+    if category_search_df is not None:
+        latest = category_search_df.iloc[-8:].mean(numeric_only=True).sort_values(ascending=False)
+        colors_bar = [AMBER if i == 0 else GRAY for i in range(len(latest))]
+        fig = go.Figure(go.Bar(x=latest.index, y=latest.values, marker_color=colors_bar))
+        fig.update_xaxes(showticklabels=False)
+        fig.update_yaxes(showticklabels=False)
+        st.plotly_chart(base_layout(fig, height=110, legend=False), use_container_width=True)
+    st.markdown('<div class="mini-tag" style="margin-top:-14px; border-top:none; border-radius:0 0 12px 12px;"><div class="d">영양제 중 비타민 카테고리 최강세</div></div>', unsafe_allow_html=True)
 with c3:
-    st.markdown('<div class="mini-tag"><div class="t">남은 과제</div><div class="v">?</div><div class="d">이 기회를 실제 선택으로<br>연결하려면?</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-tag" style="height:100%; display:flex; flex-direction:column; justify-content:center;"><div class="t">남은 과제</div><div class="v">?</div><div class="d">이 기회를 실제 선택으로<br>연결하려면?</div></div>', unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 st.divider()
@@ -575,13 +591,37 @@ st.markdown(f"""
 
 t1, t2, t3, t4 = st.columns(4)
 with t1:
-    st.markdown('<div class="mini-tag"><div class="t">고민하지 않아도</div><div class="v">5/5개</div><div class="d">상황 모두 검색 존재</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-tag"><div class="t">고민하지 않아도</div><div class="v">5/5개</div></div>', unsafe_allow_html=True)
+    if recommend_df is not None:
+        d = recommend_df[recommend_df["연령대"].isin(AGE_ORDER_4)]
+        ranking = d.groupby("키워드")["평균검색관심도"].mean().sort_values(ascending=False)
+        fig = go.Figure(go.Bar(x=ranking.index, y=ranking.values, marker_color=AMBER))
+        fig.update_xaxes(showticklabels=False); fig.update_yaxes(showticklabels=False)
+        st.plotly_chart(base_layout(fig, height=95, legend=False), use_container_width=True)
+    st.markdown('<div class="mini-tag" style="margin-top:-14px; border-top:none; border-radius:0 0 12px 12px;"><div class="d">상황 모두 검색 존재</div></div>', unsafe_allow_html=True)
 with t2:
-    st.markdown('<div class="mini-tag"><div class="t">누구에게나</div><div class="v">5개 관계</div><div class="d">모든 대상에서 검색</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-tag"><div class="t">누구에게나</div><div class="v">5개 관계</div></div>', unsafe_allow_html=True)
+    if recipient_df is not None:
+        d = recipient_df[recipient_df["연령대"].isin(AGE_ORDER_4)]
+        ranking = d.groupby("키워드")["평균검색관심도"].mean().sort_values(ascending=False)
+        fig = go.Figure(go.Bar(x=ranking.index, y=ranking.values, marker_color=AMBER))
+        fig.update_xaxes(showticklabels=False); fig.update_yaxes(showticklabels=False)
+        st.plotly_chart(base_layout(fig, height=95, legend=False), use_container_width=True)
+    st.markdown('<div class="mini-tag" style="margin-top:-14px; border-top:none; border-radius:0 0 12px 12px;"><div class="d">모든 대상에서 검색</div></div>', unsafe_allow_html=True)
 with t3:
-    st.markdown('<div class="mini-tag"><div class="t">센스있고</div><div class="v">39건</div><div class="d">프리미엄 이미지 1위</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-tag"><div class="t">센스있고</div><div class="v">39건</div></div>', unsafe_allow_html=True)
+    colors_bar = [AMBER if i == 0 else GRAY for i in range(len(REASON_POS))]
+    fig = go.Figure(go.Bar(x=list(REASON_POS.keys()), y=list(REASON_POS.values()), marker_color=colors_bar))
+    fig.update_xaxes(showticklabels=False); fig.update_yaxes(showticklabels=False)
+    st.plotly_chart(base_layout(fig, height=95, legend=False), use_container_width=True)
+    st.markdown('<div class="mini-tag" style="margin-top:-14px; border-top:none; border-radius:0 0 12px 12px;"><div class="d">프리미엄 이미지 1위</div></div>', unsafe_allow_html=True)
 with t4:
-    st.markdown('<div class="mini-tag"><div class="t">적당한</div><div class="v">46건</div><div class="d">효과·구성 vs 가격부담 5건</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mini-tag"><div class="t">적당한</div><div class="v">46건</div></div>', unsafe_allow_html=True)
+    pos_neg = {"긍정 요인\n(효과+구성)": 46, "가격부담": 5}
+    fig = go.Figure(go.Bar(x=list(pos_neg.keys()), y=list(pos_neg.values()), marker_color=[SAGE, RUST]))
+    fig.update_xaxes(showticklabels=False); fig.update_yaxes(showticklabels=False)
+    st.plotly_chart(base_layout(fig, height=95, legend=False), use_container_width=True)
+    st.markdown('<div class="mini-tag" style="margin-top:-14px; border-top:none; border-radius:0 0 12px 12px;"><div class="d">효과·구성 vs 가격부담 5건</div></div>', unsafe_allow_html=True)
 
 st.markdown(f"""
 <div style="margin-top:32px; padding-top:14px; border-top:1px solid {LINE}; font-size:10.5px; color:{TEXT_SUB}; line-height:1.7;">
