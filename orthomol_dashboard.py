@@ -148,6 +148,7 @@ channel_df = safe_csv("선물채널_언급량.csv")
 price_df = safe_csv("종합비타민_가격비교.csv")
 category_search_df = safe_csv("영양제_유튜브 검색_트렌드.csv")
 gift_cat_df = safe_csv("연령별_선물카테고리_선호도.csv")
+click_ratio_df = safe_csv("연령별_구매근사_쇼핑클릭비율.csv")
 occasion_total_df = safe_csv("선물시즌_총언급량.csv")
 occasion_month_df = safe_csv("선물시즌_월별분포.csv")
 worry_brand_df = safe_csv("선물고민_브랜드별언급량.csv")
@@ -373,23 +374,43 @@ st.divider()
 # ============================================================
 section_header(6, "검색은 한우, 그러나 실용성은 영양제", "선물 카테고리 검색 관심도 1위는 한우이지만 건강·실용성 수요는 영양제가 흡수한다")
 
-gap_note("연령대별 '구매 클릭' 데이터(네이버쇼핑 클릭비율)는 이번에 파일이 없어 검색 관심도 데이터로만 구성했습니다. 추후 파일 확보 시 보강 예정입니다.")
+col_cat1, col_cat2 = st.columns(2)
+with col_cat1:
+    if gift_cat_df is not None:
+        chart_card_open("연령대별 선물 카테고리 검색 관심도")
+        fig = go.Figure()
+        colors_map = {"영양제 선물": AMBER, "홍삼 선물": STEEL, "한우 선물": SAGE, "상품권 선물": GRAY, "화장품 선물": PLUM}
+        for col in [c for c in gift_cat_df.columns if c != "연령대"]:
+            fig.add_trace(go.Bar(x=gift_cat_df["연령대"], y=gift_cat_df[col], name=col, marker_color=colors_map.get(col, GRAY)))
+        fig.update_layout(barmode="group")
+        st.plotly_chart(base_layout(fig, height=300), use_container_width=True)
+        chart_card_close()
+    else:
+        missing("연령별_선물카테고리_선호도.csv")
+
+with col_cat2:
+    if click_ratio_df is not None:
+        chart_card_open("연령대별 구매 근사(쇼핑 클릭 비율)")
+        fig_click = go.Figure()
+        click_colors = {"영양제 선물": AMBER, "홍삼 선물": STEEL, "한우 선물": SAGE}
+        for col in ["영양제 선물", "홍삼 선물", "한우 선물"]:
+            fig_click.add_trace(go.Bar(x=click_ratio_df["연령대"], y=click_ratio_df[col], name=col, marker_color=click_colors.get(col, GRAY)))
+        fig_click.update_layout(barmode="group")
+        st.plotly_chart(base_layout(fig_click, height=300), use_container_width=True)
+        chart_card_close()
+    else:
+        missing("연령별_구매근사_쇼핑클릭비율.csv")
 
 if gift_cat_df is not None:
-    chart_card_open("연령대별 선물 카테고리 검색 관심도")
-    fig = go.Figure()
-    colors_map = {"영양제 선물": AMBER, "홍삼 선물": STEEL, "한우 선물": SAGE, "상품권 선물": GRAY, "화장품 선물": PLUM}
-    for col in [c for c in gift_cat_df.columns if c != "연령대"]:
-        fig.add_trace(go.Bar(x=gift_cat_df["연령대"], y=gift_cat_df[col], name=col, marker_color=colors_map.get(col, GRAY)))
-    fig.update_layout(barmode="group")
-    st.plotly_chart(base_layout(fig, height=300), use_container_width=True)
-    chart_card_close()
-
+    click_insight = ""
+    if click_ratio_df is not None:
+        row30 = click_ratio_df[click_ratio_df["연령대"] == "30대"].iloc[0]
+        click_insight = (f" 검색 관심도는 한우가 1위이지만, 실제 쇼핑 클릭 데이터에서는 <b>모든 연령대에서 영양제 선물이 1위</b>를 "
+                          f"차지한다 — 특히 30대는 영양제({row30['영양제 선물']:.1f})가 한우({row30['한우 선물']:.1f})를 앞서며 "
+                          f"<b>검색과 구매 행동 사이의 괴리</b>를 보여준다.")
     insight("한우 선물이 전 연령대에서 검색 관심도 1위를 차지하지만, 오픈서베이 기준 영양제 선호 이유는 "
             "<b>건강·실용성</b>이 압도적이다 (전 세대 공통 1순위 니즈: 면역강화 71.5%, 2순위 피로회복 56.9%) — "
-            "오쏘몰 '이뮨' 라인의 포지셔닝과 정확히 맞아떨어진다.")
-else:
-    missing("연령별_선물카테고리_선호도.csv")
+            "오쏘몰 '이뮨' 라인의 포지셔닝과 정확히 맞아떨어진다." + click_insight)
 
 if image_theme_df is not None:
     chart_card_open("오쏘몰 콘텐츠 테마 비중", "네이버 블로그·카페 텍스트 키워드 기반 (복수 응답)")
